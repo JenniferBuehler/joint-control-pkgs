@@ -87,28 +87,9 @@ namespace gazebo
  * **To 3)**
  *
  * So why do we need both position and velocity controllers?
- * This is best explained with an example.
- *
- * Say we want to control the arm with velocities *only*. And we want it to maintain the current
- * position by setting all velocities to 0.
- * This does not work with PID controllers. Take the example:
- * - we want the hand to maintain a position in which it is *stretched out* and pulled down by
- *   gravity, so that it would fall down unless an "upwards" force is applied.
- * - gravity will pull it down, and the joint will have a small negative velocity
- *   (or, rather, a "downwards" velocity).
- *   The PID controller now wants to set it to positive ("upwards") velocity in order to reach 0 again.
- * - now the velocity is positive, just to get back to 0 velocity. So the PID demands a
- *   a negative ("downwards") velocity again, to reach zero. And here we have an instable situation.
- *   The arm will never rest, wiggle around, and eventually not maintain its position very well at all.
- *
- * This can be solved by adding position controllers as well:
- * - Use position controllers to maintain the *current* position if there is no velocity commands, or
- *   the velocity command is 0.
- * - if there are non-zero velocity commands, ignore the position command and only set the
- *   effort/velocity based on the velocity command.
- *
- * The ideal solution would be to re-implement (or extend) gazebo_ros_control::gazebo::DefaultRobotHWSim
- * to support the above functionanlity. Then, we could also use ros_control ROS controllers for the arm.
+ * Please refer to
+ * [this wiki page](https://github.com/JenniferBuehler/jaco-arm-pkgs/wiki/Controlling-joints-with-velocity-commands)
+ * for more details about this.
  *
  * **Limitation of this base class**
  *

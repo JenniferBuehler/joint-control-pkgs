@@ -54,16 +54,17 @@ namespace gazebo
  *    tag ``<robot_components_namespace> your-namespace </robot_components_namespace>``.
  *
  *
- * **Note**
- * It may be necessary to publish values uncapped (*not* in range [-PI,PI]
- * when the lower limit is < -PI.
- * When using Gazebo, it was not possible to use lower limit > higher
- * limit in the URDF, e.g. 2.5..0.73.
- * MoveIt however will detect an angle of 3.0 as invalid if we have limits such as -3.9..0.73.
- * So we need to publish angles between -3.9..0.73. This has to be done for all revolute joints
- * with such limits where lower > higher.
- * Use ROS paramter "preserve_original_angles" to specify comma-separated list of joint names
- * for which the original gazebo angles are to be published.
+ *  **Note**
+ *  It may be necessary to publish values uncapped ( *not* in range [-PI,PI])
+ *  when the lower limit is smaller than -PI.
+ *  When using Gazebo, currently it is not possible to use a lower limit value greater than
+ *  the higher limit in the URDF, e.g. [2.5..0.73].    
+ *  While this generally does not present a problem, it does in conjunction with MoveIt!.
+ *  MoveIt will detect an angle of eg. 3.0 as invalid if we have limits such as [-3.9..0.73].
+ *  So we need to publish angles in this range as well. This has to be done for all *revolute* joints
+ *  where lower limit value is greater than higher limit.
+ *  Use ROS paramter ``preserve_original_angles`` to specify comma-separated list of joint names
+ *  for which the original gazebo angles are to be published.
  *
  * \author Jennifer Buehler
  * \date January 2016
