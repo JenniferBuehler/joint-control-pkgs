@@ -2,7 +2,10 @@
 <package>
   <name>joint_trajectory_execution</name>
   <version>0.0.0</version>
-  <description>The joint_trajectory_execution package</description>
+  <description>
+      Provides a ROS control_msgs/FollowJoinTrajectoryAction.
+      Target joint position / velocity to set at the times of playing the trajectory.
+  </description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <maintainer email="jennifer.e.buehler@gmail.com">Jennifer Buehler</maintainer>

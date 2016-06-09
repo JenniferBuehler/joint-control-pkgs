@@ -46,7 +46,7 @@ class TrajectoryActionServer;  // forward declaration for shared pointer typedef
 typedef boost::shared_ptr<TrajectoryActionServer> TrajectoryActionServerPtr;
 
 /**
- * \brief Provides a ROS control_msgs/JoinTrajectoryAction and computes target joint position / velocity to set at the times of playing the trajectory.
+ * \brief Provides a ROS control_msgs/FollowJoinTrajectoryAction. Target joint position / velocity to set at the times of playing the trajectory.
  *
  * This class exists mainly in order to provide a means to execute a trajectory with some control
  * over the accuracy of execution, synchronizing the arm state at intermediate trajectory points.

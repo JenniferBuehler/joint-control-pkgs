@@ -2,7 +2,9 @@
 <package>
   <name>gazebo_joint_control</name>
   <version>0.0.0</version>
-  <description>Provides control of joints in Gazebo via JointState and JointTrajectory messages</description>
+  <description>
+      Provides control of joints in Gazebo via JointState and JointTrajectory messages
+  </description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <maintainer email="jennifer.e.buehler@gmail.com">Jennifer Buehler</maintainer>
