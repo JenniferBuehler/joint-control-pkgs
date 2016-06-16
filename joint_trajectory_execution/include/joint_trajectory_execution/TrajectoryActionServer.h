@@ -41,9 +41,12 @@
 #define DEFAULT_ANGLE_SAFETY_LIMIT 0.3
 #define DEFAULT_GOAL_TOLERANCE 0.05
 
+namespace joint_trajectory_execution
+{
 
 class TrajectoryActionServer;  // forward declaration for shared pointer typedef
 typedef boost::shared_ptr<TrajectoryActionServer> TrajectoryActionServerPtr;
+
 
 /**
  * \brief Provides a ROS control_msgs/FollowJoinTrajectoryAction. Target joint position / velocity to set at the times of playing the trajectory.
@@ -156,6 +159,40 @@ public:
         float _interGoalTolerance = 2 * DEFAULT_GOAL_TOLERANCE);
 
     virtual ~TrajectoryActionServer();
+
+    /**
+     * Reads values from ROS parameters and initializes all non-const parameters to this 
+     * function to the right values, according to ROS parameters and \e armNames.
+     * ROS Parameters are to be given as in the example in config/JointTrajectoryParams.yaml.
+     * See also this file for documentation of some of the given parameters.
+     *
+     * \param trajectoryROSNamespace ROS namespace to use for reading
+     *      trajectory parameters from ROS parameter server
+     * \param armNames a correctly initialzied arm components name manager
+     * \param trajectoryPos target trajectory positions. See also constructor.
+     *      Vector will be initialized to correct size for the joints specified in ArmComponentsNameManager.
+     * \param trajectoryVel target trajectory velocities. See also constructor. 
+     *      Vector will be initialized to correct size for the joints specified in ArmComponentsNameManager.
+     * \param currentAngles current angles, needs to be always updated. See also constructor. 
+     *      Vector will be initialized to correct size for the joints specified in ArmComponentsNameManager.
+     * \param currentVels current velocities, needs to be always updated. See also constructor. 
+     *      Vector will be initialized to correct size for the joints specified in ArmComponentsNameManager.
+     * \return false if the parameters could not be read correctly.
+     */
+    static bool InitFromROSParameters(const std::string& trajectoryROSNamespace,
+            const arm_components_name_manager::ArmComponentsNameManager& armNames,
+            std::string& joint_trajectory_action_topic,
+            double& goal_angles_tolerance,
+            double& intermediateTrajectoryAnglesTolerance,
+            double& angles_safety_limit,
+            bool& trajectory_position_mode,
+            bool& useOnlineVelocityControl,
+            double& exceed_duration_wait_factor,
+            std::vector<float>& maxVel,
+            std::vector<float>& targetPos,
+            std::vector<float>& targetVel,
+            std::vector<float>& currentAngles,
+            std::vector<float>& currentVels);
 
     /**
      * Creates and initializes and instance of TrajectoryActionServer reading
@@ -649,6 +686,6 @@ private:
     bool simplifyTrajectoryVelocities;
 };
 
-
+}  // namespace
 
 #endif  // JOINT_TRAJECTORY_EXECUTION_TRAJECTORYACTIONSERVER_H

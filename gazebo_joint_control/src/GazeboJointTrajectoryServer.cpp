@@ -37,6 +37,7 @@
 // #define USE_VELOCITY_TRACKER
 
 using convenience_math_functions::MathFunctions;
+using joint_trajectory_execution::TrajectoryActionServer;
 
 namespace gazebo
 {

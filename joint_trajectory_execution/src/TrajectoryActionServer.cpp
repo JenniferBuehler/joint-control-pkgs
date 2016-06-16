@@ -59,6 +59,89 @@
 
 using convenience_math_functions::MathFunctions;
 using arm_components_name_manager::ArmComponentsNameManager;
+using joint_trajectory_execution::TrajectoryActionServer;
+using joint_trajectory_execution::TrajectoryActionServerPtr;
+
+bool TrajectoryActionServer::InitFromROSParameters(const std::string& trajectoryROSNamespace,
+            const arm_components_name_manager::ArmComponentsNameManager& armNames,
+            std::string& joint_trajectory_action_topic,
+            double& goal_angles_tolerance,
+            double& intermediateTrajectoryAnglesTolerance,
+            double& angles_safety_limit,
+            bool& trajectory_position_mode,
+            bool& useOnlineVelocityControl,
+            double& exceed_duration_wait_factor,
+            std::vector<float>& maxVel,
+            std::vector<float>& targetPos,
+            std::vector<float>& targetVel,
+            std::vector<float>& currentAngles,
+            std::vector<float>& currentVels)
+{
+    ros::NodeHandle n(trajectoryROSNamespace);
+    ROS_INFO_STREAM("Reading joint trajectory parameters from namespace "<<trajectoryROSNamespace);
+
+    n.param<std::string>("action_topic", joint_trajectory_action_topic, DEFAULT_JOINT_TRAJECTORY_ACTION_TOPIC);
+    ROS_INFO("Joint trajectory action topic name: <%s>", joint_trajectory_action_topic.c_str());
+
+    goal_angles_tolerance = 0.01;
+    n.param<double>("goal_angles_tolerance", goal_angles_tolerance, goal_angles_tolerance);
+    ROS_INFO("Goal angles tolerance: <%f>", goal_angles_tolerance);
+
+    intermediateTrajectoryAnglesTolerance = 2 * goal_angles_tolerance;
+    n.param<double>("goal_angles_intermediate_tolerance", intermediateTrajectoryAnglesTolerance,
+            intermediateTrajectoryAnglesTolerance);
+    ROS_INFO("Intermediate goal angles tolerance: <%f>", intermediateTrajectoryAnglesTolerance);
+
+    angles_safety_limit = -1;
+    n.param<double>("angle_safety_limit", angles_safety_limit, angles_safety_limit);
+    ROS_INFO("Trajectory goal angles safety limit: <%lf>", angles_safety_limit);
+
+    trajectory_position_mode = DEFAULT_TRAJECTORY_POSITION_MODE;
+    n.param<bool>("use_angle_poses", trajectory_position_mode, trajectory_position_mode);
+    ROS_INFO("Using trajectory position mode: <%i>", trajectory_position_mode);
+
+    useOnlineVelocityControl = !DEFAULT_TRAJECTORY_POSITION_MODE;
+    n.param<bool>("use_online_control", useOnlineVelocityControl, useOnlineVelocityControl);
+    ROS_INFO("Using online control: <%i>", useOnlineVelocityControl);
+
+    exceed_duration_wait_factor = 1.2;
+    n.param<double>("exceed_duration_wait_factor", exceed_duration_wait_factor, exceed_duration_wait_factor);
+    ROS_INFO("Exceed duration wait factor: <%f>", exceed_duration_wait_factor);
+
+    /*if (useOnlineVelocityControl && trajectory_position_mode) {
+        ROS_WARN("forcing velocity mode for trajectory execution, because online velocity control is enabled");
+        trajectory_position_mode=false;
+    }*/
+    
+    std::vector<std::string> joint_names;
+    armNames.getJointNames(joint_names, true);
+
+    maxVel.resize(joint_names.size(), DEFAULT_MAX_VEL);
+
+    std::vector<std::string>::iterator jit;
+    int jpos=0;
+    for (jit=joint_names.begin(); jit!=joint_names.end(); ++jit, ++jpos)
+    {
+        float force, velocity;
+        if (!armNames.GetMaxVals(*jit, force, velocity))
+        {
+            ROS_WARN_STREAM("Max velocity for joint "<<*jit<<" is not specified in component parameters. Using default.");
+            maxVel[jpos]=DEFAULT_MAX_VEL;
+        }
+        else
+        {
+            ROS_INFO_STREAM("Max velocity for joint "<<*jit<<" specified as "<<velocity);
+            maxVel[jpos]=velocity;
+        }
+    }
+
+    targetPos.resize(joint_names.size(), 0);
+    targetVel.resize(joint_names.size(), 0);
+    currentAngles.resize(joint_names.size(), 0);
+    currentVels.resize(joint_names.size(), 0);
+
+    return true;
+} 
 
 
 TrajectoryActionServerPtr TrajectoryActionServer::CreateFromParameters(const std::string& trajectoryROSNamespace,
@@ -86,69 +169,33 @@ TrajectoryActionServerPtr TrajectoryActionServer::CreateFromParameters(const std
             std::vector<float>& currentVels,
             boost::mutex& lock)
 {
-    ros::NodeHandle n(trajectoryROSNamespace);
-    ROS_INFO_STREAM("Reading joint trajectory parameters from namespace "<<trajectoryROSNamespace);
 
     std::string joint_trajectory_action_topic;
-    n.param<std::string>("action_topic", joint_trajectory_action_topic, DEFAULT_JOINT_TRAJECTORY_ACTION_TOPIC);
-    // ROS_INFO("got joint trajectory action topic name: <%s>", joint_trajectory_action_topic.c_str());
-
-    double goal_angles_tolerance = 0.01;
-    n.param<double>("goal_angles_tolerance", goal_angles_tolerance, goal_angles_tolerance);
-    // ROS_INFO("got goal angles tolerance: <%f>", goal_angles_tolerance);
-
-    double intermediateTrajectoryAnglesTolerance = 2 * goal_angles_tolerance;
-    n.param<double>("goal_angles_intermediate_tolerance", intermediateTrajectoryAnglesTolerance,
-            intermediateTrajectoryAnglesTolerance);
-
-    double angles_safety_limit = -1;
-    n.param<double>("angle_safety_limit", angles_safety_limit, angles_safety_limit);
-    // ROS_INFO("got goal angles safety limit: <%lf>", angles_safety_limit);
-
-    bool trajectory_position_mode = DEFAULT_TRAJECTORY_POSITION_MODE;
-    n.param<bool>("use_angle_poses", trajectory_position_mode, trajectory_position_mode);
-    // ROS_INFO("using trajectory position mode: <%i>", trajectory_position_mode);
-
-    bool useOnlineVelocityControl = !DEFAULT_TRAJECTORY_POSITION_MODE;
-    n.param<bool>("use_online_control", useOnlineVelocityControl, useOnlineVelocityControl);
-
-    double exceed_duration_wait_factor = 1.2;
-    n.param<double>("exceed_duration_wait_factor", exceed_duration_wait_factor, exceed_duration_wait_factor);
-    // ROS_INFO("got exceed duration wait factor: <%f>", exceed_duration_wait_factor);
-
-    /*if (useOnlineVelocityControl && trajectory_position_mode) {
-        ROS_WARN("forcing velocity mode for trajectory execution, because online velocity control is enabled");
-        trajectory_position_mode=false;
-    }*/
-
-    
-    std::vector<std::string> joint_names;
-    armNames.getJointNames(joint_names, true);
-
+    double goal_angles_tolerance;
+    double intermediateTrajectoryAnglesTolerance;
+    double angles_safety_limit;
+    bool trajectory_position_mode;
+    bool useOnlineVelocityControl;
+    double exceed_duration_wait_factor;
     std::vector<float> maxVel;
-    maxVel.resize(joint_names.size(), DEFAULT_MAX_VEL);
-
-    std::vector<std::string>::iterator jit;
-    int jpos=0;
-    for (jit=joint_names.begin(); jit!=joint_names.end(); ++jit, ++jpos)
+    if (!TrajectoryActionServer::InitFromROSParameters(trajectoryROSNamespace, armNames,
+            joint_trajectory_action_topic,
+            goal_angles_tolerance,
+            intermediateTrajectoryAnglesTolerance,
+            angles_safety_limit,
+            trajectory_position_mode,
+            useOnlineVelocityControl,
+            exceed_duration_wait_factor,
+            maxVel,
+            targetPos,
+            targetVel,
+            currentAngles,
+            currentVels))
     {
-        float force, velocity;
-        if (!armNames.GetMaxVals(*jit, force, velocity))
-        {
-            ROS_WARN_STREAM("Max velocity for joint "<<*jit<<" is not specified in component parameters. Using default.");
-            maxVel[jpos]=DEFAULT_MAX_VEL;
-        }
-        else
-        {
-            ROS_INFO_STREAM("Setting max velocity for joint "<<*jit<<" to "<<velocity);
-            maxVel[jpos]=velocity;
-        }
+        ROS_ERROR_STREAM("Could not read parameters from namespace "<<trajectoryROSNamespace);
+        return TrajectoryActionServerPtr();
     }
 
-    targetPos.resize(joint_names.size(), 0);
-    targetVel.resize(joint_names.size(), 0);
-    currentAngles.resize(joint_names.size(), 0);
-    currentVels.resize(joint_names.size(), 0);
     bool simplifyTrajectories = true;
 
     TrajectoryActionServerPtr trajectory_action_server = TrajectoryActionServerPtr(
@@ -179,7 +226,6 @@ TrajectoryActionServerPtr TrajectoryActionServer::CreateFromParameters(const std
 }
 
 
-
 TrajectoryActionServer::TrajectoryActionServer(
     const ArmComponentsNameManager& _joints,
     std::string& action_topic_name,
@@ -202,7 +248,8 @@ TrajectoryActionServer::TrajectoryActionServer(
         INTER_GOAL_TOLERANCE(interGoalTolerance),
         ANGLE_SAFETY_LIMIT(_armAngleSafetyLimit),
         maxVelocities(_maxVelocities),
-        targetPos(_targetPos), targetVel(_targetVel),
+        targetPos(_targetPos),
+        targetVel(_targetVel),
         current_joint_angles(_currentAngles),
         current_joint_vels(_currentVels),
         valueLock(_lock),
@@ -227,7 +274,6 @@ TrajectoryActionServer::TrajectoryActionServer(
     {
         ROS_INFO_STREAM("Current values are not of size "<<joints.numTotalJoints());
     }
-
 
     if (useOnlineVelocityControl && usePositionMode())
     {

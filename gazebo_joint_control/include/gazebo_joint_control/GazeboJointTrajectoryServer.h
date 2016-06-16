@@ -88,7 +88,7 @@ private:
 
     void readJointStates(std::vector<float>& currAngles, std::vector<float>& currVels);
 
-    TrajectoryActionServerPtr trajectory_action_server;
+    joint_trajectory_execution::TrajectoryActionServerPtr trajectory_action_server;
 
     // target trajectory positions
     std::vector<float> trajectoryPos;
