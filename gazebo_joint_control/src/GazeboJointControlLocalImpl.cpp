@@ -221,6 +221,38 @@ double GazeboJointControlLocalImpl::UpdateForceToPosition(const physics::JointPt
     return capTargetForce(joint, cmd, false);
 }
 
+    
+// removes from \e anyMap all joint names (map key) which are not maintained by \e joints
+template<class Any>
+void FilterMaintanedJointsMap(std::map<std::string, Any>& anyMap, const std::vector<std::string>& joint_names, const physics::ModelPtr& model)
+{  
+    // this implementation just builds a new map
+    std::map<std::string, Any> newMap;
+    for (std::vector<std::string>::const_iterator it=joint_names.begin(); it!=joint_names.end(); ++it)
+    {
+        // need to get the joint to retrieve the scoped name
+        physics::JointPtr joint = model->GetJoint(*it);
+        if (!joint)
+        {
+            ROS_ERROR_STREAM("GazeboJointControlLocalImpl: FilterMaintanedJointsMap can't find joint "<<*it);
+            continue;
+        }
+        typename std::map<std::string, Any>::iterator mEntry = anyMap.find(joint->GetScopedName());
+        if (mEntry!=anyMap.end())
+        {
+            newMap.insert(std::make_pair(mEntry->first, mEntry->second));
+        }
+    }
+    anyMap = newMap;
+    /*
+    // this implementation removes entries from the map which can't be found in joint_names
+    for (typename std::map<std::string, Any>::iterator it=anyMap.begin(); it!=anyMap.end(); ++it)
+    {
+        if (std::find(joint_names.begin(),joint_names.end(), it->first) == joint_names.end())
+        {
+        }
+    }*/
+} 
 
 
 bool GazeboJointControlLocalImpl::UpdateJoints()
@@ -265,6 +297,12 @@ bool GazeboJointControlLocalImpl::UpdateJoints()
     std::map<std::string, double> velocities = jointController->GetVelocities();
 
     std::map<std::string, physics::JointPtr > jntMap = jointController->GetJoints();
+    std::vector<std::string> joint_names; // all joint names maintained by the joint manager. This should be a global field at some point.
+    joints->getJointNames(joint_names, true); 
+        
+    FilterMaintanedJointsMap(forces, joint_names, model);
+    FilterMaintanedJointsMap(positions, joint_names, model);
+    FilterMaintanedJointsMap(velocities, joint_names, model);
 
     const int axis = 0;
 

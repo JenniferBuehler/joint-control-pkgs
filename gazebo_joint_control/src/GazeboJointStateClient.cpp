@@ -76,6 +76,8 @@ void GazeboJointStateClient::Load(physics::ModelPtr _parent, sdf::ElementPtr _sd
         ROS_WARN("SDF Element 'robot_components_namespace' not defined, so using robot name as namespace for components.");
     }
 
+    // ROS_INFO_STREAM("GazeboJointStateClient loading joints from components namespace '"<<armNamespace<<"'");
+
     joints = ArmComponentsNameManagerPtr(new ArmComponentsNameManager(armNamespace,false));
     if (!joints->loadParameters(true))
     {
@@ -113,7 +115,7 @@ void GazeboJointStateClient::Load(physics::ModelPtr _parent, sdf::ElementPtr _sd
     for (std::map<std::string, physics::JointPtr>::iterator it = jntMap.begin(); it != jntMap.end(); ++it)
     {
         physics::JointPtr j = it->second;
-        // ROS_INFO_STREAM("Gazebo joint: '"<<j->GetName()<<"' is registered as '"<<it->first<<"'");
+        ROS_INFO_STREAM("Gazebo joint: '"<<j->GetName()<<"' is registered as '"<<it->first<<"'");
     }
 
 
@@ -136,7 +138,7 @@ void GazeboJointStateClient::Load(physics::ModelPtr _parent, sdf::ElementPtr _sd
         std::map<std::string, physics::JointPtr >::iterator jit = jntMap.find(scopedName);
         if (jit == jntMap.end())
         {
-            ROS_ERROR_STREAM("Joint name " << *it << " not found in joint controller joints->");
+            ROS_ERROR_STREAM("Joint name " << *it << " not found in joint controller joints");
             throw std::string("Joint not found");
         }
 
@@ -199,7 +201,7 @@ void GazeboJointStateClient::JointStateCallback(sensor_msgs::JointStateConstPtr 
         std::map<std::string, physics::JointPtr >::iterator jit = jntMap.find(scopedName);
         if (jit == jntMap.end())
         {
-            // ROS_WARN_STREAM("Joint name "<<scopedName<<" not found in joint controller joints->");
+            // ROS_WARN_STREAM("Joint name "<<scopedName<<" not found in joint controller joints");
             continue;
         }
 

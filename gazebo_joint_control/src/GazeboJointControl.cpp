@@ -114,18 +114,45 @@ void GazeboJointControl::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     nh.param<bool>("gazebo/load_velocity_controllers",loadVelocityControllers,loadVelocityControllers);
     ROS_INFO_STREAM("Set to load velocity controlers: "<<loadVelocityControllers);
 
-    physics::JointControllerPtr _modelJointController = _parent->GetJointController();
-    if (!_modelJointController.get())
-    {
-        ROS_ERROR("Cannot load GazeboJointControl if no default JointController is set for the model");
-        throw std::string("Cannot load GazeboJointControl if no default JointController is set for the model");
+
+    // Instantiate the threadsafe Joint Controller of parent model
+    // -------------
+    
+    // First, check if there is already a thread-safe joint controller for the parent model
+    physics::BasePtr jcChild = _parent->GetChild(physics::JointControllerThreadsafe::UniqueName());
+    if (!jcChild.get())
+    {   // no joint controller loaded yet, so create a new one
+        physics::JointControllerPtr _modelJointController = _parent->GetJointController();
+        if (!_modelJointController.get())
+        {
+            ROS_ERROR("Cannot load GazeboJointControl if no default JointController is set for the model");
+            throw std::string("Cannot load GazeboJointControl if no default JointController is set for the model");
+        }
+
+        JointControllerThreadsafe::JointControllerImplPtr _newControllerPtr(new JointControllerThreadsafe::JointControllerImpl(_parent));
+        jointController = physics::JointControllerThreadsafePtr(
+                              new JointControllerThreadsafe(_parent, _newControllerPtr));
+        //jointController = physics::JointControllerThreadsafePtr(
+        //                      new physics::JointControllerThreadsafe(_parent, _modelJointController));
+        _parent->AddChild(jointController);
+    }
+    else
+    {   // use the existing joint controller
+        physics::JointControllerThreadsafePtr ptr =
+            boost::dynamic_pointer_cast<physics::JointControllerThreadsafe>(jcChild);
+        if (!ptr.get())
+        {
+            ROS_ERROR_STREAM("Cannot load GazeboJointStateClient if child '"
+                             << physics::JointControllerThreadsafe::UniqueName()
+                             << "' is not of class JointControllerThreadsafe");
+            throw std::string("Cannot load GazeboJointStateClient if child '"
+                              + physics::JointControllerThreadsafe::UniqueName()
+                              + "' is not of class JointControllerThreadsafe");
+        }
+        jointController = ptr;
     }
 
-    JointControllerThreadsafe::JointControllerImplPtr _newControllerPtr(new JointControllerThreadsafe::JointControllerImpl(_parent));
-    jointController = physics::JointControllerThreadsafePtr(
-                          new JointControllerThreadsafe(_parent, _newControllerPtr));
-    //jointController = physics::JointControllerThreadsafePtr(
-    //                      new physics::JointControllerThreadsafe(_parent, _modelJointController));
+
 
     // get joint names from parameters
     std::vector<std::string> joint_names;
@@ -248,7 +275,6 @@ void GazeboJointControl::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
         ++i;
     }
 
-    _parent->AddChild(jointController);
     model = _parent;
 
     update_connection = event::Events::ConnectWorldUpdateBegin(boost::bind(&GazeboJointControl::WorldUpdate, this));
@@ -334,7 +360,6 @@ double GazeboJointControl::capTargetVel(const physics::JointPtr joint, const flo
 }
 
 
-
 double GazeboJointControl::capTargetForce(const physics::JointPtr joint, const float targetForce, const bool considerJointLimits) const
 {
     if (joint.get() == NULL)
@@ -387,9 +412,6 @@ double GazeboJointControl::capTargetForce(const physics::JointPtr joint, const f
 
     return force;
 }
-
-
-
 
 bool GazeboJointControl::UpdateJoints()
 {
@@ -471,7 +493,7 @@ void GazeboJointControl::GetPosGains(const std::string& jointName, float& kp, fl
     GetDefaultPosGains(kp, ki, kd);
     if (!joints->GetPosGains(jointName, kp, ki, kd))
     {
-        ROS_ERROR_STREAM("Joint " << jointName << " not maintained by the joint manager");
+        ROS_ERROR_STREAM("GazeboJointControl::GetPosGains: Joint " << jointName << " not maintained by the joint manager");
     }
     // ROS_INFO_STREAM("Using position PID values for joint " << jointName << ": p=" << kp << ", i=" << ki << ", d=" << kd);
 }
@@ -482,7 +504,7 @@ void GazeboJointControl::GetVelGains(const std::string& jointName, float& kp, fl
     GetDefaultVelGains(kp, ki, kd);
     if (!joints->GetVelGains(jointName, kp, ki, kd))
     {
-        ROS_ERROR_STREAM("Joint " << jointName << " not maintained by the joint manager");
+        ROS_ERROR_STREAM("GazeboJointControl::GetVelGains: Joint " << jointName << " not maintained by the joint manager");
     }
 
     // ROS_INFO_STREAM("Using velocity PID values for joint " << jointName << ": p=" << kp << ", i=" << ki << ", d=" << kd);
@@ -493,7 +515,7 @@ void GazeboJointControl::GetMaxVals(const std::string& jointName, float& force, 
     GetDefaultMaxVals(force, velocity);
     if (!joints->GetMaxVals(jointName, force, velocity))
     {
-        ROS_ERROR_STREAM("Joint " << jointName << " not maintained by the joint manager");
+        ROS_ERROR_STREAM("GazeboJointControl::GetMaxVals: Joint " << jointName << " not maintained by the joint manager");
     }
 }
 
