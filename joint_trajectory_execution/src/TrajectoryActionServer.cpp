@@ -252,6 +252,7 @@ TrajectoryActionServer::TrajectoryActionServer(
         targetVel(_targetVel),
         current_joint_angles(_currentAngles),
         current_joint_vels(_currentVels),
+        action_server(NULL),
         valueLock(_lock),
         positionMode(_positionMode),
         enableMaxAngleDistSafety(_armAngleSafetyLimit > 0),
@@ -267,20 +268,6 @@ TrajectoryActionServer::TrajectoryActionServer(
                                         boost::bind(&TrajectoryActionServer::actionCallback, this, _1),
                                         boost::bind(&TrajectoryActionServer::cancelCallback, this, _1),
                                         false);
-
-    targetPos.resize(joints.numTotalJoints(), 0);
-    targetVel.resize(joints.numTotalJoints(), 0);
-    if (current_joint_angles.size() !=joints.numTotalJoints())
-    {
-        ROS_INFO_STREAM("Current values are not of size "<<joints.numTotalJoints());
-    }
-
-    if (useOnlineVelocityControl && usePositionMode())
-    {
-        ROS_WARN("Can only online velocity control in velocity mode!");
-        ROS_WARN("Forcing velocity mode for trajectory execution.");
-        positionMode = false;
-    }
 }
 
 
@@ -298,6 +285,22 @@ void TrajectoryActionServer::shutdown()
 
 bool TrajectoryActionServer::init()
 {
+
+    ROS_INFO_STREAM("Initializing trajectory action server for "<<joints.numTotalJoints()<<" joints.");
+    targetPos.resize(joints.numTotalJoints(), 0);
+    targetVel.resize(joints.numTotalJoints(), 0);
+    if (current_joint_angles.size() !=joints.numTotalJoints())
+    {
+        ROS_INFO_STREAM("Current values are not of size "<<joints.numTotalJoints());
+    }
+
+    if (useOnlineVelocityControl && usePositionMode())
+    {
+        ROS_WARN("Can only online velocity control in velocity mode!");
+        ROS_WARN("Forcing velocity mode for trajectory execution.");
+        positionMode = false;
+    }
+
     if ((targetPos.size() != joints.numTotalJoints()) ||
             (targetVel.size() != joints.numTotalJoints()) || 
             (current_joint_angles.size() != joints.numTotalJoints()))
