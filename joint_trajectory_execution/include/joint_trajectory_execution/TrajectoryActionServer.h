@@ -64,16 +64,16 @@ typedef boost::shared_ptr<TrajectoryActionServer> TrajectoryActionServerPtr;
  * adjust velocities, e.g. backtrack when a position goal has been overshot.
  *
  * The disadvantage of the increased accuracy control is that the execution of the trajectory may not be as
- * smooth. 
+ * smooth.
  *
- * **Prerequisite**    
+ * **Prerequisite**
  * This implementation only works well if the joint velocities in the robot can be met fairly well
  * according to the target values provided by this class. As a rule of thumb, an error margin of
  * max. 15-20% *can* be acceptable, but the greater the error, the more often the trajectory execution
  * may get stuck and not reach the target points. Underlying PID controllers should be used in the
  * arm controllers to ensure that the error margin is low.
  *
- * **Usage**    
+ * **Usage**
  * A controller which maintains an instance of this class may read the target
  * joint positions/velocities and control the arm accordingly.
  * An array is passed to the constructor (along with a mutex) which will have the current target
@@ -81,7 +81,7 @@ typedef boost::shared_ptr<TrajectoryActionServer> TrajectoryActionServerPtr;
  * Please refer to the constructor documentation which provides more details on how this
  * class works through the documentation of paramters.
  *
- * **Important TODO**    
+ * **Important TODO**
  * This class has recently been migrated from JointTrajectoryAction to FollowJointTrajectoryAction.
  * Accordingly, this can be improved to read the tolerances from FollowJointTrajectoryAction. In
  * the current implementation, tolerances are set globally for all joints.
@@ -109,7 +109,7 @@ public:
      *      each finger joint (not velocities).
      *      This is to determine when the trajectory has finished playing.
      *      The values must externally be kept up-to-date at all times.
-     * \param _currentVels pointer to current velocity values, one float for each arm and each finger joint. 
+     * \param _currentVels pointer to current velocity values, one float for each arm and each finger joint.
      *      This is to determine when the trajectory has finished playing.
      *      The values must externally be kept up-to-date at all times.
      * \param _lock lock to use for \e _targetPos, \e _targetVel, \e _currentAngles and \e _currentVels.
@@ -161,7 +161,7 @@ public:
     virtual ~TrajectoryActionServer();
 
     /**
-     * Reads values from ROS parameters and initializes all non-const parameters to this 
+     * Reads values from ROS parameters and initializes all non-const parameters to this
      * function to the right values, according to ROS parameters and \e armNames.
      * ROS Parameters are to be given as in the example in config/JointTrajectoryParams.yaml.
      * See also this file for documentation of some of the given parameters.
@@ -171,11 +171,11 @@ public:
      * \param armNames a correctly initialzied arm components name manager
      * \param trajectoryPos target trajectory positions. See also constructor.
      *      Vector will be initialized to correct size for the joints specified in ArmComponentsNameManager.
-     * \param trajectoryVel target trajectory velocities. See also constructor. 
+     * \param trajectoryVel target trajectory velocities. See also constructor.
      *      Vector will be initialized to correct size for the joints specified in ArmComponentsNameManager.
-     * \param currentAngles current angles, needs to be always updated. See also constructor. 
+     * \param currentAngles current angles, needs to be always updated. See also constructor.
      *      Vector will be initialized to correct size for the joints specified in ArmComponentsNameManager.
-     * \param currentVels current velocities, needs to be always updated. See also constructor. 
+     * \param currentVels current velocities, needs to be always updated. See also constructor.
      *      Vector will be initialized to correct size for the joints specified in ArmComponentsNameManager.
      * \return false if the parameters could not be read correctly.
      */
@@ -205,11 +205,11 @@ public:
      *      from (see also arm_components_name_manager::ArmComponentsNameManager).
      * \param trajectoryPos target trajectory positions. See also constructor.
      *      Vector will be initialized to correct size for the joints specified in ArmComponentsNameManager.
-     * \param trajectoryVel target trajectory velocities. See also constructor. 
+     * \param trajectoryVel target trajectory velocities. See also constructor.
      *      Vector will be initialized to correct size for the joints specified in ArmComponentsNameManager.
-     * \param currentAngles current angles, needs to be always updated. See also constructor. 
+     * \param currentAngles current angles, needs to be always updated. See also constructor.
      *      Vector will be initialized to correct size for the joints specified in ArmComponentsNameManager.
-     * \param currentVels current velocities, needs to be always updated. See also constructor. 
+     * \param currentVels current velocities, needs to be always updated. See also constructor.
      *      Vector will be initialized to correct size for the joints specified in ArmComponentsNameManager.
      * \param lock lock to use for \e _targetPos, \e _targetVel, \e _currentAngles and \e _currentVels.
      * \return NULL pointer if loading the parameters or initializing the action server failed.
@@ -238,12 +238,12 @@ public:
     /**
      * Starts action server and does internal initialisation.
      */
-    bool init();
+    bool initServer();
 
     /**
      * methods to be executed for shutting down the action server
      */
-    void shutdown();
+    void shutdownServer();
 
     /**
      * if true, the joint trajectory is controlled by joint angle positions, otherwise it is controlled by velocities.
@@ -336,7 +336,7 @@ protected:
      *
      * The on-line control of the trajectory which continually checks whether the joint has arrived at its
      * intermediate trajectory position. The trajectory playing is synchronized at each intermediate trajectory point:
-     * if some joints were slower, others wait for it to be at this intermediate trajectory point. 
+     * if some joints were slower, others wait for it to be at this intermediate trajectory point.
      * Only works if velocity mode is set (usePositionMode()==false).
      *
      * \param inter_tolerance target angle tolerance for points inbetween the trajectory.
@@ -435,7 +435,7 @@ protected:
      * Checks if trajectory is eligible for execution from the current robot state.
      * If there is a too large distance between two trajectory points or the current
      * robot position and the first trajectory point, this function returns false.
-     * \param joint_indices must contain one index for each arm / finger joint 
+     * \param joint_indices must contain one index for each arm / finger joint
      * which indicate at which position in the trajectory arrays this joint can be found
      * \param group set to 0 if both arm and finger angles are given. Set to 1 if only arm joints
      * are present, in which case the size has to be the number of arm joints, or set to 2
@@ -467,7 +467,7 @@ protected:
 
     /**
      * Helper function which interpolates between vectors v1 and v2 (must be of same size):
-     * 
+     *
      *      result[i] = v1[i] + t * (v2[i]-v1[i])
      *
      * which is equivalent to

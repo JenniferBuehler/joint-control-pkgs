@@ -213,7 +213,7 @@ TrajectoryActionServerPtr TrajectoryActionServer::CreateFromParameters(const std
                                        useOnlineVelocityControl,
                                        intermediateTrajectoryAnglesTolerance));
 
-    if (!trajectory_action_server->init())
+    if (!trajectory_action_server->initServer())
     {
         ROS_ERROR("Error initializing joint trajectory action server");
         return TrajectoryActionServerPtr();
@@ -273,17 +273,17 @@ TrajectoryActionServer::TrajectoryActionServer(
 
 TrajectoryActionServer::~TrajectoryActionServer()
 {
-    shutdown();
+    shutdownServer();
     delete action_server;
 }
 
 
-void TrajectoryActionServer::shutdown()
+void TrajectoryActionServer::shutdownServer()
 {
     shutdownImpl();
 }
 
-bool TrajectoryActionServer::init()
+bool TrajectoryActionServer::initServer()
 {
 
     ROS_INFO_STREAM("Initializing trajectory action server for "<<joints.numTotalJoints()<<" joints.");
