@@ -18,7 +18,7 @@
   <xacro:include filename="$(find gazebo_joint_control)/rrbot_example/urdf/rrbot_simplified_joint_plugin.xacro"/>
   <xacro:gzplugin_joint_control robot_components_namespace="$(arg robot_components_namespace)"
                                 trajectory_param_namespace="$(arg trajectory_param_namespace)"
-                                load_trajectory_server="false"/>
+                                load_trajectory_server="true"/>
   <!-- ****************************** -->
 
   <!-- Used for fixing robot to Gazebo 'base_link' -->
