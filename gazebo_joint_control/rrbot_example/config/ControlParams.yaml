@@ -1,0 +1,30 @@
+# PID values to use for JointControlLocalImpl
+
+rrbot:
+  # Publish all joint states -----------------------------------
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 100  
+
+  # Position Controllers ---------------------------------------
+  joint_1_position_controller:
+    type: position_controllers/JointPositionController
+    joint: joint1
+    pid: {p: 20, i: 1.0, d: 0}
+
+  joint_2_position_controller:
+    type: position_controllers/JointPositionController
+    joint: joint2
+    pid: {p: 20, i: 1.0, d: 0}
+
+
+  # Velocity Controllers ---------------------------------------
+  joint1_velocity_controller:
+    type: velocity_controllers/JointVelocityController
+    joint: joint1 
+    pid: {p: 0.4, i: 0, d: 0}  
+
+  joint2_velocity_controller:
+    type: velocity_controllers/JointVelocityController
+    joint: joint2
+    pid: {p: 0.4, i: 0, d: 0}  

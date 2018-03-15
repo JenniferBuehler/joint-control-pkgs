@@ -1,0 +1,52 @@
+<launch>
+
+  <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="true"/>
+  <arg name="headless" default="false"/>
+  <arg name="debug" default="false"/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="debug" value="$(arg debug)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+    <arg name="headless" value="$(arg headless)"/>
+  </include>
+
+  <!-- Load the URDF into the ROS Parameter Server -->
+  <param name="robot_description"
+    command="$(find xacro)/xacro --inorder '$(find gazebo_joint_control)/rrbot_example/urdf/rrbot_simplified.xacro'" />
+
+  <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+    args="-urdf -model rrbot -param robot_description"/>
+  
+  <!-- ############################################# -->
+  <!-- Joint Control configuration                   -->
+  <!-- ############################################# -->
+  <!-- load the joint state publisher GUI -->  
+  <arg name="load_joint_state_publisher" default="true"/>
+  <arg name="joint_control_topic" default="/my_joint_control"/>
+
+  <!-- topic for gzplugin_joint_state_client -->
+  <rosparam param="joint_state_control_topic" subst_value="true">$(arg joint_control_topic)</rosparam>  
+  <!-- topic for gzplugin_joint_state_publisher -->
+  <rosparam param="publish_joint_states_topic">/my_joints</rosparam>  
+
+  <!-- load the arm component names -->
+  <rosparam command="load" file="$(find gazebo_joint_control)/rrbot_example/config/JointConfig.yaml"/>
+
+  <!-- Load joint controller configurations from YAML file to parameter server -->
+  <rosparam file="$(find gazebo_joint_control)/rrbot_example/config/ControlParams.yaml" command="load"/>  
+
+	<!-- joint_state_publisher is the GUI to set the target joint angles. -->
+  <!-- It publishes to joint_states, which we will remap to joint_control -->
+  <node if="$(arg load_joint_state_publisher)" name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+		<param name="use_gui" value="true" />
+		<param name="rate" value="10" />
+		<remap from="joint_states" to="$(arg joint_control_topic)" />
+	</node>
+
+</launch>

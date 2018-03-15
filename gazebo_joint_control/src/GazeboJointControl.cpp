@@ -102,18 +102,18 @@ void GazeboJointControl::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     }
 
 
-    ROS_INFO_STREAM("Loading arm component parameters from "<<armNamespace);
+    ROS_INFO_STREAM("GazeboJointControl: Loading arm component parameters from "<< armNamespace);
     joints = ArmComponentsNameManagerPtr(new ArmComponentsNameManager(armNamespace,false));
-    if (!joints->loadParameters(true))
+    if (!joints->waitToLoadParameters(1, 3, 0.5))
     {
         ROS_FATAL_STREAM("Cannot load arm components for robot "<<_parent->GetName()<<" from namespace "<<armNamespace);
         return;
     }
+    ROS_INFO_STREAM("GazeboJointControl: Arm component parameters loaded.");
 
     bool loadVelocityControllers = true;
     nh.param<bool>("gazebo/load_velocity_controllers",loadVelocityControllers,loadVelocityControllers);
     ROS_INFO_STREAM("Set to load velocity controlers: "<<loadVelocityControllers);
-
 
     // Instantiate the threadsafe Joint Controller of parent model
     // -------------

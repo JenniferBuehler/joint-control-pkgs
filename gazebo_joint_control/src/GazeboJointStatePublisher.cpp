@@ -32,7 +32,7 @@
 #include <string>
 #include <vector>
 
-#define DEFAULT_JOINT_STATE_TOPIC "/joint_control"
+#define DEFAULT_JOINT_STATE_TOPIC "/joints_in_gazebo"
 
 
 // set to true if all joints are to be published.
@@ -87,8 +87,6 @@ GazeboJointStatePublisher::~GazeboJointStatePublisher()
 {
 }
 
-
-
 void GazeboJointStatePublisher::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 {
     // Make sure the ROS node for Gazebo has already been initalized
@@ -111,8 +109,9 @@ void GazeboJointStatePublisher::Load(physics::ModelPtr _parent, sdf::ElementPtr 
         ROS_WARN("SDF Element 'robot_components_namespace' not defined, so using robot name as namespace for components.");
     }
   
+    ROS_INFO_STREAM("GazeboJointStatePublisher: Loading arm component parameters from "<< armNamespace);
     joints = ArmComponentsNameManagerPtr(new ArmComponentsNameManager(armNamespace,false));
-    if (!joints->loadParameters(true))
+    if (!joints->waitToLoadParameters(1, 3, 0.5))
     {
         ROS_FATAL_STREAM("Cannot load arm components for robot "<<_parent->GetName()<<" from namespace "<<armNamespace);
         return;

@@ -44,14 +44,12 @@ GazeboJointStateClient::GazeboJointStateClient():
 {
     ROS_INFO("Creating GazeboJointStateClient plugin");
     nh.param("joint_state_control_topic", jointStateTopic, jointStateTopic);
-    ROS_INFO_STREAM("Joint state subscription topic: " << jointStateTopic);
+    ROS_INFO_STREAM("GazeboJointStateClient subscription topic: " << jointStateTopic);
 }
 
 GazeboJointStateClient::~GazeboJointStateClient()
 {
 }
-
-
 
 void GazeboJointStateClient::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 {
@@ -78,8 +76,9 @@ void GazeboJointStateClient::Load(physics::ModelPtr _parent, sdf::ElementPtr _sd
 
     // ROS_INFO_STREAM("GazeboJointStateClient loading joints from components namespace '"<<armNamespace<<"'");
 
+    ROS_INFO_STREAM("GazeboJointStateClient: Loading arm component parameters from "<< armNamespace);
     joints = ArmComponentsNameManagerPtr(new ArmComponentsNameManager(armNamespace,false));
-    if (!joints->loadParameters(true))
+    if (!joints->waitToLoadParameters(1, 3, 0.5))
     {
         ROS_FATAL_STREAM("Cannot load arm components for robot "<<_parent->GetName()<<" from namespace "<<armNamespace);
         return;
@@ -175,7 +174,6 @@ void GazeboJointStateClient::JointStateCallback(sensor_msgs::JointStateConstPtr 
     std::map<std::string, double> velocities = jointController->GetVelocities();
     std::map<std::string, physics::JointPtr > jntMap = jointController->GetJoints();
 
-
     // XXX old implementation:
     // clear out all possible current targets. Necessary e.g. to clear out
     // exitsing velocity targets, when only positions are set now...
@@ -187,7 +185,6 @@ void GazeboJointStateClient::JointStateCallback(sensor_msgs::JointStateConstPtr 
     {
         bool isGripper = false;
         std::string jointName = _joints->name[i];
-
 
         // ROS_INFO_STREAM("Processing joint '"<<jointName<<"'");
         physics::JointPtr joint = model->GetJoint(jointName);

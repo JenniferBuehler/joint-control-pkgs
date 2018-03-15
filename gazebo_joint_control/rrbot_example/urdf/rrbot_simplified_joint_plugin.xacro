@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root 
+  xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+  xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+  xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+  xmlns:xacro="http://ros.org/wiki/xacro">
+
+<xacro:macro name="gzplugin_joint_control"
+  params="robot_components_namespace
+          trajectory_param_namespace
+          load_trajectory_server:=false">
+  <gazebo>
+    <!-- Load the joint control plugin -->
+    <plugin name="gzplugin_joint_control" filename="libgazebo_joint_control.so">
+      <robot_components_namespace>
+          ${robot_components_namespace} 
+      </robot_components_namespace>
+    </plugin>
+    <!-- Load the joint state controller client -->
+    <!-- will subscribe to topic read from ROS parameter publish_joint_states_topic -->
+    <plugin name="gzplugin_joint_state_client" filename="libgazebo_joint_state_client.so">
+      <robot_components_namespace>
+          ${robot_components_namespace} 
+      </robot_components_namespace>
+    </plugin>
+    <!-- OPTIONAL: Load the joint state publisher -->
+    <!-- will publish to topic read from ROS parameter publish_joint_states_topic -->
+    <!--plugin name="gzplugin_joint_state_publisher" filename="libgazebo_joint_state_publisher.so">
+      <robot_components_namespace>
+          ${robot_components_namespace} 
+      </robot_components_namespace>
+    </plugin-->
+    <!-- OPTIONAL: Load the joint trajectory server -->
+    <xacro:if value="${load_trajectory_server}">
+      <plugin name="gzplugin_joint_trajectory_server" filename="libgazebo_joint_trajectory_server.so"> 
+        <robot_components_namespace>
+            ${robot_components_namespace} 
+        </robot_components_namespace>
+        <trajectory_param_namespace>
+            ${trajectory_param_namespace} 
+        </trajectory_param_namespace>
+      </plugin>
+    </xacro:if>
+  </gazebo>
+</xacro:macro>
+</root>
