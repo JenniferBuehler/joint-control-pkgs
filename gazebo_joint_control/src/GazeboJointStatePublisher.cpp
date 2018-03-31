@@ -176,8 +176,14 @@ void GazeboJointStatePublisher::readJointStates(sensor_msgs::JointState& js)
         unsigned int axis = 0;
         if (joint->GetAngleCount() != 1)
         {
-            ROS_FATAL("Only support 1 axis");
-            exit(1);
+            ROS_ERROR_STREAM("GazeboJointStatePublisher: Only support 1 axis, "
+                    << "got " << joint->GetAngleCount()
+                    << ", cannot write angle for joint '" << _jointName << "'");
+            js.name.push_back(_jointName);
+            js.position.push_back(0);
+            js.velocity.push_back(0);
+            js.effort.push_back(0);
+            continue;
         }
 
         double currAngle = joint->GetAngle(axis).Radian();
