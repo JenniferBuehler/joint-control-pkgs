@@ -340,14 +340,19 @@ void GazeboJointTrajectoryServer::readJointStates(std::vector<float>& currAngles
 
         bool robotJoint = (armJointNumber >= 0) || (gripperJointNumber >= 0);
         if (!robotJoint) continue;
+        
+        if (joint->GetAngleCount() == 0)
+        {
+          // skip fixed joints
+          continue;
+        }
 
         unsigned int axis = 0;
-        if (joint->GetAngleCount() != 1)
+        if (joint->GetAngleCount() > 1)
         {
-            ROS_ERROR_STREAM("GazeboJointTrajectoryServer: Only support 1 "
-                      << "axis, got " << joint->GetAngleCount()
-                      << ", so cannot read value for joint " << jointName);
-            continue;
+            ROS_WARN_STREAM("GazeboJointTrajectoryServer: Only support 1 axis, "
+                      << "got " << joint->GetAngleCount()
+                      << ". Wil only read first value for joint " << jointName);
         }
 
         double currAngle = joint->GetAngle(axis).Radian();
