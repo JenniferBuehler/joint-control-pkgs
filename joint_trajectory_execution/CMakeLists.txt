@@ -92,7 +92,9 @@ install(TARGETS trajectory_action_server
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.h"
+  FILES_MATCHING 
+    PATTERN "*.h"
+    PATTERN "*.hpp"
 )
 
 if (EXISTS ${CMAKE_CURRENT_BINARY_DIR}/docs/html)
