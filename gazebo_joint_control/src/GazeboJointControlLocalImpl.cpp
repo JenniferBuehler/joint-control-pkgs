@@ -1,25 +1,13 @@
 #ifdef DOXYGEN_SHOULD_SKIP_THIS
 /**
    Copyright (C) 2015 Jennifer Buehler
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software Foundation,
-   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+   See also LICENSE file in this repository.
 */
 #endif
 
 
 #include <gazebo_joint_control/GazeboJointControlLocalImpl.h>
+#include <gazebo_joint_control/GazeboVersionHelpers.h>
 #include <convenience_math_functions/MathFunctions.h>
 #include <map>
 #include <string>
@@ -77,7 +65,7 @@ using convenience_math_functions::MathFunctions;
 namespace gazebo
 {
 
-
+////////////////////////////////////////////////////////////////////////////////
 GazeboJointControlLocalImpl::GazeboJointControlLocalImpl():
     GazeboJointControl()
 {
@@ -90,28 +78,31 @@ GazeboJointControlLocalImpl::GazeboJointControlLocalImpl():
     ROS_INFO_STREAM("Gazebo using SetVelocity(): "<<useSetVelocity);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 GazeboJointControlLocalImpl::~GazeboJointControlLocalImpl()
 {
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
 bool GazeboJointControlLocalImpl::DisableGravity() const
 {
     return DISABLE_GRAVITY;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 bool GazeboJointControlLocalImpl::UseForce() const
 {
     return !SetVelocity();
 }
 
+////////////////////////////////////////////////////////////////////////////////
 bool GazeboJointControlLocalImpl::SetVelocity() const
 {
     return useSetVelocity;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
 void GazeboJointControlLocalImpl::GetDefaultPosGains(float& kp, float& ki, float& kd) const
 {
     if (SetVelocity())
@@ -126,7 +117,7 @@ void GazeboJointControlLocalImpl::GetDefaultPosGains(float& kp, float& ki, float
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 void GazeboJointControlLocalImpl::GetDefaultVelGains(float& kp, float& ki, float& kd) const
 {
     if (SetVelocity())
@@ -141,14 +132,15 @@ void GazeboJointControlLocalImpl::GetDefaultVelGains(float& kp, float& ki, float
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
 double GazeboJointControlLocalImpl::DistToPosition(const physics::JointPtr& joint,
         double targetPosition) const
 {
     const int axis = 0;
-    double currPosition = joint->GetAngle(axis).Radian();
+    double currPosition = GetPosition(joint, axis);
 
-    double lowLimit=joint->GetLowerLimit(axis).Radian();
-    double highLimit=joint->GetUpperLimit(axis).Radian();
+    double lowLimit=GetLowerLimit(joint, axis);
+    double highLimit=GetUpperLimit(joint, axis);
 //    ROS_INFO_STREAM("Limits: "<<lowLimit<<", "<<highLimit);
 
     double _targetPosition=MathFunctions::limitsToTwoPI(targetPosition, lowLimit, highLimit);
@@ -200,6 +192,7 @@ double GazeboJointControlLocalImpl::AdjustForCloseTarget(const physics::JointPtr
 }
 */
 
+////////////////////////////////////////////////////////////////////////////////
 double GazeboJointControlLocalImpl::UpdateVelocityToPosition(const physics::JointPtr& joint,
         double targetPosition, common::PID& pid, const gazebo::common::Time& stepTime) const
 {
@@ -210,6 +203,7 @@ double GazeboJointControlLocalImpl::UpdateVelocityToPosition(const physics::Join
     return capTargetVel(joint, cmd, false);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 double GazeboJointControlLocalImpl::UpdateForceToPosition(const physics::JointPtr& joint,
         double targetPosition, common::PID& pid, const gazebo::common::Time& stepTime) const
 {
@@ -222,6 +216,7 @@ double GazeboJointControlLocalImpl::UpdateForceToPosition(const physics::JointPt
 }
 
     
+////////////////////////////////////////////////////////////////////////////////
 // removes from \e anyMap all joint names (map key) which are not maintained by \e joints
 template<class Any>
 void FilterMaintanedJointsMap(std::map<std::string, Any>& anyMap, const std::vector<std::string>& joint_names, const physics::ModelPtr& model)
@@ -255,6 +250,7 @@ void FilterMaintanedJointsMap(std::map<std::string, Any>& anyMap, const std::vec
 } 
 
 
+////////////////////////////////////////////////////////////////////////////////
 bool GazeboJointControlLocalImpl::UpdateJoints()
 {
     // XXX TODO remove this test:
@@ -280,7 +276,7 @@ bool GazeboJointControlLocalImpl::UpdateJoints()
     }
 
     //ROS_INFO("Start");
-    common::Time currTime = model->GetWorld()->GetSimTime();
+    common::Time currTime = GetSimTime(model->GetWorld());
     common::Time stepTime = currTime - prevUpdateTime;
 
     if (stepTime <= 0)
@@ -447,7 +443,7 @@ bool GazeboJointControlLocalImpl::UpdateJoints()
                                              << " This message is printed only once.");
                         std::map<std::string, common::PID> posPIDs = jointController->GetPositionPIDs();
                         common::PID posPID = posPIDs[it->first];
-                        double currPosition = joint->GetAngle(axis).Radian();  // if capped to PI, it won't work for joint limits
+                        double currPosition = GetPosition(joint, axis);  // if capped to PI, it won't work for joint limits
                         
                         if (SetVelocity()) finalTargetVal = UpdateVelocityToPosition(joint, currPosition, posPID, stepTime);
                         else finalTargetVal = UpdateForceToPosition(joint, currPosition, posPID, stepTime);
@@ -538,7 +534,7 @@ bool GazeboJointControlLocalImpl::UpdateJoints()
                 joint->SetForce(axis, fju->second);
         }
     }
-    prevUpdateTime = model->GetWorld()->GetSimTime();
+    prevUpdateTime = GetSimTime(model->GetWorld());
    // ROS_INFO_STREAM("end: "<<stepTime.Double());
     return true;
 }

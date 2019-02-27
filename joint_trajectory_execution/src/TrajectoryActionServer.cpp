@@ -1,20 +1,6 @@
 /**
-   Copyright (C) 2015 Jennifer Buehler
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software Foundation,
-   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-*/
+ *  Copyright (C) 2019 Jennifer Buehler
+ */
 
 #include <joint_trajectory_execution/TrajectoryActionServer.h>
 #include <convenience_math_functions/MathFunctions.h>
@@ -39,7 +25,6 @@
 // maximum of ONLINE_EXE_MIN_CORRECT_VEL
 #define ONLINE_EXE_MAX_CORRECT_VEL 0.15
 
-
 // like ONLINE_EXE_MIN_CORRECT_VEL but for 
 // fine-adjustment, so should be lower.
 #define ONLINE_EXE_MIN_CORRECT_VEL_FINE 0.05
@@ -62,7 +47,9 @@ using arm_components_name_manager::ArmComponentsNameManager;
 using joint_trajectory_execution::TrajectoryActionServer;
 using joint_trajectory_execution::TrajectoryActionServerPtr;
 
-bool TrajectoryActionServer::InitFromROSParameters(const std::string& trajectoryROSNamespace,
+///////////////////////////////////////////////////////////////////////////////
+bool TrajectoryActionServer::InitFromROSParameters(
+      const std::string& trajectoryROSNamespace,
       const arm_components_name_manager::ArmComponentsNameManager& armNames,
       std::string& joint_trajectory_action_topic,
       double& goal_angles_tolerance,
@@ -144,6 +131,7 @@ bool TrajectoryActionServer::InitFromROSParameters(const std::string& trajectory
 } 
 
 
+///////////////////////////////////////////////////////////////////////////////
 TrajectoryActionServerPtr TrajectoryActionServer::CreateFromParameters(const std::string& trajectoryROSNamespace,
     const std::string& armNamesROSNamespace,
     std::vector<float>& targetPos,
@@ -161,6 +149,7 @@ TrajectoryActionServerPtr TrajectoryActionServer::CreateFromParameters(const std
   return CreateFromParameters(trajectoryROSNamespace, arm, targetPos, targetVel, currentAngles, currentVels, lock);
 }
   
+///////////////////////////////////////////////////////////////////////////////
 TrajectoryActionServerPtr TrajectoryActionServer::CreateFromParameters(const std::string& trajectoryROSNamespace,
       const arm_components_name_manager::ArmComponentsNameManager& armNames,
       std::vector<float>& targetPos,
@@ -226,6 +215,7 @@ TrajectoryActionServerPtr TrajectoryActionServer::CreateFromParameters(const std
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
 TrajectoryActionServer::TrajectoryActionServer(
   const ArmComponentsNameManager& _joints,
   std::string& action_topic_name,
@@ -263,14 +253,16 @@ TrajectoryActionServer::TrajectoryActionServer(
     useOnlineVelocityControl(_useOnlineVelocityControl)
 {
   ros::NodeHandle n("");  // the namespace is fully contained in the joint_trajectory_action_topic, so can use public here
-  action_server = new JTActionServerT(n,
-                    action_topic_name,
-                    boost::bind(&TrajectoryActionServer::actionCallback, this, _1),
-                    boost::bind(&TrajectoryActionServer::cancelCallback, this, _1),
-                    false);
+  boost::function<void(GoalHandle)> actFct =
+    boost::bind(&TrajectoryActionServer::actionCallback, this, _1);
+  boost::function<void(GoalHandle)> cncFct = 
+    boost::bind(&TrajectoryActionServer::cancelCallback, this, _1);
+  action_server = new JTActionServerT(n, action_topic_name,
+                                      actFct, cncFct, false);
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
 TrajectoryActionServer::~TrajectoryActionServer()
 {
   shutdownServer();
@@ -278,11 +270,13 @@ TrajectoryActionServer::~TrajectoryActionServer()
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
 void TrajectoryActionServer::shutdownServer()
 {
   shutdownImpl();
 }
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::initServer()
 {
 
@@ -336,8 +330,8 @@ bool TrajectoryActionServer::initServer()
   return true;
 }
 
-
-void TrajectoryActionServer::cancelCallback(GoalHandle& goal)
+///////////////////////////////////////////////////////////////////////////////
+void TrajectoryActionServer::cancelCallback(GoalHandle goal)
 {
   ROS_INFO("TrajectoryActionServer: Received action cancel request");
   goalLock.lock();
@@ -347,9 +341,8 @@ void TrajectoryActionServer::cancelCallback(GoalHandle& goal)
   else ROS_ERROR("This goal is not currently being executed in this server");
 }
 
-
-
-void TrajectoryActionServer::actionCallback(GoalHandle& goal)
+///////////////////////////////////////////////////////////////////////////////
+void TrajectoryActionServer::actionCallback(GoalHandle goal)
 {
   if (!initialized)
   {
@@ -481,6 +474,7 @@ void TrajectoryActionServer::actionCallback(GoalHandle& goal)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::playTrajectoryImplementation(const trajectory_msgs::JointTrajectory& traj,
   const std::vector<int>& joint_indices, const int group)
 {
@@ -507,6 +501,7 @@ bool TrajectoryActionServer::playTrajectoryImplementation(const trajectory_msgs:
 
 
 
+///////////////////////////////////////////////////////////////////////////////
 void TrajectoryActionServer::playTrajectorySimple(const trajectory_msgs::JointTrajectory traj,
     const std::vector<int>& joint_indices, const int group)
 {
@@ -570,6 +565,7 @@ void TrajectoryActionServer::playTrajectorySimple(const trajectory_msgs::JointTr
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
 void TrajectoryActionServer::playTrajectoryOnlineControlled(const trajectory_msgs::JointTrajectory traj,
   const std::vector<int>& joint_indices, const int group, const float inter_tolerance, float lagTime)
 {
@@ -738,6 +734,7 @@ void TrajectoryActionServer::playTrajectoryOnlineControlled(const trajectory_msg
 
 
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::repeatedWaitUntilPointReached(const std::vector<float>& _targetPos, float recheckTime,
     float maxWaitForExact, float maxWaitForZero, float tolerance, float lagTime,
     float min_correct_vel, float max_correct_vel, int numTries)
@@ -805,6 +802,7 @@ bool TrajectoryActionServer::repeatedWaitUntilPointReached(const std::vector<flo
 
 
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::waitUntilVelocitiesZero(float recheckTime, float maxWaitTime, float tolerance)
 {
   bool success = true;
@@ -847,6 +845,7 @@ bool TrajectoryActionServer::waitUntilVelocitiesZero(float recheckTime, float ma
   return true;
 }
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::waitUntilPointReached(const std::vector<float>& _targetPos,
     const std::vector<float>& _initialTargetVel,
     float recheckTime, float maxWaitTime, float tolerance,
@@ -963,6 +962,7 @@ bool TrajectoryActionServer::waitUntilPointReached(const std::vector<float>& _ta
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
 inline int sign(const double n)
 {
   return n > 0 ? 1 : -1;
@@ -971,6 +971,7 @@ inline int sign(const double n)
 
 
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::adaptTrajectoryVelocitiesToLinear(trajectory_msgs::JointTrajectory& traj,
     const std::vector<int>& joint_indices) const
 {
@@ -1078,6 +1079,7 @@ bool TrajectoryActionServer::adaptTrajectoryVelocitiesToLinear(trajectory_msgs::
 
 
 
+///////////////////////////////////////////////////////////////////////////////
 void TrajectoryActionServer::adaptTrajectoryAngles(trajectory_msgs::JointTrajectory& traj, double diff, double epsilon) const
 {
   if (traj.points.size() < 1) return;
@@ -1108,6 +1110,7 @@ void TrajectoryActionServer::adaptTrajectoryAngles(trajectory_msgs::JointTraject
 
 
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::removeIrrelevantStates(const std::vector<int>& idx, std::vector<float>& values) const
 {
   if (idx.size() != values.size()) return false;
@@ -1129,6 +1132,7 @@ bool TrajectoryActionServer::removeIrrelevantStates(const std::vector<int>& idx,
 
 
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::checkTrajectory(const trajectory_msgs::JointTrajectory& traj,
     const std::vector<int>& joint_indices, int group)
 {
@@ -1213,6 +1217,7 @@ bool TrajectoryActionServer::checkTrajectory(const trajectory_msgs::JointTraject
   return true;
 }
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::maxVelExceeded(std::vector<float>& vels, int check, float tolerance_above) const
 {
   if (check < 2)
@@ -1252,6 +1257,7 @@ bool TrajectoryActionServer::maxVelExceeded(std::vector<float>& vels, int check,
 
 
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::angleDistanceOK(std::vector<float>& j1, std::vector<float>& j2,
         int check, float maxAngle) const
 {
@@ -1297,6 +1303,7 @@ bool TrajectoryActionServer::angleDistanceOK(std::vector<float>& j1, std::vector
   return true;
 }
 
+///////////////////////////////////////////////////////////////////////////////
 void TrajectoryActionServer::abortExecution()
 {
   if (playThread)
@@ -1309,6 +1316,7 @@ void TrajectoryActionServer::abortExecution()
   goalLock.unlock();
 }
 
+///////////////////////////////////////////////////////////////////////////////
 void TrajectoryActionServer::joinExecutionThread()
 {
   if (playThread)
@@ -1317,6 +1325,7 @@ void TrajectoryActionServer::joinExecutionThread()
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::goalActive()
 {
   goalLock.lock();
@@ -1334,6 +1343,7 @@ bool TrajectoryActionServer::goalActive()
   return ros::ok() && hasOneGoal && !cancelled;
 }
 
+///////////////////////////////////////////////////////////////////////////////
 void TrajectoryActionServer::setHasCurrentGoal(bool flag)
 {
   goalLock.lock();
@@ -1341,6 +1351,7 @@ void TrajectoryActionServer::setHasCurrentGoal(bool flag)
   goalLock.unlock();
 }
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::hasCurrentGoal()
 {
   goalLock.lock();
@@ -1350,6 +1361,7 @@ bool TrajectoryActionServer::hasCurrentGoal()
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
 void TrajectoryActionServer::setExecutionFinished(bool flag, bool success)
 {
   goalLock.lock();
@@ -1368,6 +1380,7 @@ void TrajectoryActionServer::setExecutionFinished(bool flag, bool success)
   goalLock.unlock();
 }
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::executionFinished(bool& success)
 {
   goalLock.lock();
@@ -1377,6 +1390,7 @@ bool TrajectoryActionServer::executionFinished(bool& success)
   return ret;
 }
 
+///////////////////////////////////////////////////////////////////////////////
 int TrajectoryActionServer::waitForExecution(float timeout_secs)
 {
   ROS_INFO("Waiting for execution of trajectory.");
@@ -1473,6 +1487,7 @@ int TrajectoryActionServer::waitForExecution(float timeout_secs)
   return 1;
 }
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::currentTargetReached(const trajectory_msgs::JointTrajectoryPoint& point,
       const std::vector<int>& joint_indices, const int group, float tolerance)
 {
@@ -1492,6 +1507,7 @@ bool TrajectoryActionServer::currentTargetReached(const trajectory_msgs::JointTr
   return equalJointFloats(curr_angles, target_angles, tolerance, true);
 }
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::currentTargetReached(const std::vector<float>& target_angles, float tolerance)
 {
   if (!hasCurrentGoal()) return true;
@@ -1503,6 +1519,7 @@ bool TrajectoryActionServer::currentTargetReached(const std::vector<float>& targ
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::atTrajectoryStart(const trajectory_msgs::JointTrajectory& traj,
       const std::vector<int>& joint_indices, int group, float tolerance)
 {
@@ -1536,6 +1553,7 @@ bool TrajectoryActionServer::atTrajectoryStart(const trajectory_msgs::JointTraje
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
 void TrajectoryActionServer::maxEndpointDiff(float& maxAngle, int& maxJoint, const trajectory_msgs::JointTrajectory& traj,
     const std::vector<int>& joint_indices, const int group)
 {
@@ -1564,6 +1582,7 @@ void TrajectoryActionServer::maxEndpointDiff(float& maxAngle, int& maxJoint, con
 
 
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::trajectoryFinished(float tolerance)
 {
   updateCurrentState();
@@ -1593,6 +1612,7 @@ bool TrajectoryActionServer::trajectoryFinished(float tolerance)
   return reached;
 }
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::getTargetAngles(const trajectory_msgs::JointTrajectoryPoint& p,
     const std::vector<int>& j_idx, std::vector<float>& targetAngles) const
 {
@@ -1623,6 +1643,7 @@ bool TrajectoryActionServer::getTargetAngles(const trajectory_msgs::JointTraject
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::getTargetVelocities(const trajectory_msgs::JointTrajectoryPoint& p,
   const std::vector<int>& j_idx, std::vector<float>& targetVels) const
 {
@@ -1653,6 +1674,7 @@ bool TrajectoryActionServer::getTargetVelocities(const trajectory_msgs::JointTra
 
 
 
+///////////////////////////////////////////////////////////////////////////////
 void TrajectoryActionServer::setTargetValues(const trajectory_msgs::JointTrajectoryPoint& p,
     const std::vector<int>& joint_indices,
     const int group, const std::vector<float>& currentState,
@@ -1749,6 +1771,7 @@ void TrajectoryActionServer::setTargetValues(const trajectory_msgs::JointTraject
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::interpolate(const std::vector<float>& v1, const std::vector<float>& v2,
     const float t, std::vector<float>& result)
 {
@@ -1769,12 +1792,14 @@ bool TrajectoryActionServer::interpolate(const std::vector<float>& v1, const std
 
 
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::equalFlt(float first, float second, float tolerance)
 {
   return fabs(first - second) < tolerance;
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
 bool TrajectoryActionServer::equalJointFloats(const std::vector<float>& first, const std::vector<float>& second,
     float tolerance, bool useMinFingers)
 {

@@ -4,23 +4,9 @@
 /**
    Provides a gazebo plugin which uses a PID controller to control the arm.
 
-   Copyright (C) 2015 Jennifer Buehler
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software Foundation,
-   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+   Copyright (C) 2019 Jennifer Buehler
+   Please see LICENSE within this repository.
 */
-
 
 #include <gazebo/common/Plugin.hh>
 #include <gazebo/physics/physics.hh>
@@ -216,7 +202,7 @@ protected:
      * in case reading from ROS parameters fails.
      */
     virtual void GetDefaultVelGains(float& kp, float& ki, float& kd) const;
-    
+
     /**
      * Reads default maximum force and velocity for all joints
      */
@@ -264,15 +250,13 @@ protected:
      *
      * 1. caps it to the maximum values allowed for this joint
      * 2. [optional, only if considerJointLimits=true): if the joint is near to its
-     *     limit (within JOINTLIMIT_PADDING) the force 
+     *     limit (within JOINTLIMIT_PADDING) the force
      *     is not allowed to go in the direction beyond the limit
      */
     double capTargetForce(const physics::JointPtr joint, const float targetForce, const bool considerJointLimits) const;
 
-
-
     bool isGripper(const physics::JointPtr& joint) const;
-    
+
     bool velocityControllersLoaded() const
     {
         return loadedVelocityControllers;

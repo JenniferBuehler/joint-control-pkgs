@@ -503,12 +503,12 @@ protected:
     /**
      * Receive a new goal
      */
-    void actionCallback(GoalHandle& goal);
+    void actionCallback(GoalHandle goal);
 
     /**
      * Receive a cancel trajectory instruction
      */
-    void cancelCallback(GoalHandle& goal);
+    void cancelCallback(GoalHandle goal);
 
 
     bool equalFlt(float first, float second, float tolerance);
