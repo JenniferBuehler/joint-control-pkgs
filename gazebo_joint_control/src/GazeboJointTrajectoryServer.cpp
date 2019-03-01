@@ -20,6 +20,7 @@
 
 
 #include <gazebo_joint_control/GazeboJointTrajectoryServer.h>
+#include <gazebo_joint_control/GazeboVersionHelpers.h>
 #include <convenience_math_functions/MathFunctions.h>
 
 #include <ros/ros.h>
@@ -54,6 +55,7 @@ GazeboJointTrajectoryServer::~GazeboJointTrajectoryServer()
 {
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void GazeboJointTrajectoryServer::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 {
     ROS_INFO("Loading GazeboJointTrajectoryServer");
@@ -161,6 +163,7 @@ void GazeboJointTrajectoryServer::Load(physics::ModelPtr _parent, sdf::ElementPt
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
 // void GazeboJointControl::WorldUpdate()
 void GazeboJointTrajectoryServer::WorldUpdate(const ros::TimerEvent& t)
 {
@@ -320,8 +323,7 @@ void GazeboJointTrajectoryServer::WorldUpdate(const ros::TimerEvent& t)
     }
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
 void GazeboJointTrajectoryServer::readJointStates(std::vector<float>& currAngles, std::vector<float>& currVels)
 {
     const arm_components_name_manager::ArmComponentsNameManager& joints = trajectory_action_server->getArmNamesMgr();
@@ -333,6 +335,7 @@ void GazeboJointTrajectoryServer::readJointStates(std::vector<float>& currAngles
     {
         physics::JointPtr joint = *it;
         std::string jointName = joint->GetName();
+        unsigned int dof = GetDOF(joint);
 
         // ROS_INFO("Getting %s",jointName.c_str());
         int armJointNumber = trajectory_action_server->getArmNamesMgr().armJointNumber(jointName);
@@ -340,22 +343,21 @@ void GazeboJointTrajectoryServer::readJointStates(std::vector<float>& currAngles
 
         bool robotJoint = (armJointNumber >= 0) || (gripperJointNumber >= 0);
         if (!robotJoint) continue;
-        
-        if (joint->GetAngleCount() == 0)
+       
+        if (dof == 0)
         {
           // skip fixed joints
           continue;
         }
 
         unsigned int axis = 0;
-        if (joint->GetAngleCount() > 1)
+        if (dof > 1)
         {
             ROS_WARN_STREAM("GazeboJointTrajectoryServer: Only support 1 axis, "
-                      << "got " << joint->GetAngleCount()
-                      << ". Wil only read first value for joint " << jointName);
+              << "got " << dof << ". Wil only read first value for joint " << jointName);
         }
 
-        double currAngle = joint->GetAngle(axis).Radian();
+        double currAngle = GetPosition(joint, axis);
         currAngle = MathFunctions::capToPI(currAngle);
 
         // double currEff=joint->GetForce(axis);
@@ -388,15 +390,14 @@ void GazeboJointTrajectoryServer::readJointStates(std::vector<float>& currAngles
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 bool GazeboJointTrajectoryServer::isGripper(const physics::JointPtr& joint) const
 {
     return trajectory_action_server->getArmNamesMgr().isGripper(joint->GetName()) 
         || trajectory_action_server->getArmNamesMgr().isGripper(joint->GetScopedName());
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
 void GazeboJointTrajectoryServer::UpdateChild()
 {
     ROS_INFO("UpdateChild()");

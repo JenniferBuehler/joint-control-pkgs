@@ -1,25 +1,12 @@
 #ifdef DOXYGEN_SHOULD_SKIP_THIS
 /**
-   Copyright (C) 2015 Jennifer Buehler
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software Foundation,
-   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+   Copyright (C) 2019 Jennifer Buehler
+   See also LICENSE file in this repository.
 */
 #endif
 
-
 #include <gazebo_joint_control/GazeboJointStatePublisher.h>
+#include <gazebo_joint_control/GazeboVersionHelpers.h>
 #include <convenience_math_functions/MathFunctions.h>
 
 #include <ros/ros.h>
@@ -42,7 +29,9 @@
 using convenience_math_functions::MathFunctions;
 using arm_components_name_manager::ArmComponentsNameManager;
 
-void separateTokens(const std::string& str, std::set<std::string>& result) {
+///////////////////////////////////////////////////////////////////////////////
+void separateTokens(const std::string& str, std::set<std::string>& result)
+{
   if (str.empty()) return;
   boost::char_separator<char> sep(" ,;");
   typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
@@ -62,6 +51,7 @@ namespace gazebo
 
 GZ_REGISTER_MODEL_PLUGIN(GazeboJointStatePublisher);
 
+///////////////////////////////////////////////////////////////////////////////
 GazeboJointStatePublisher::GazeboJointStatePublisher():
   joints(),  // use default constructor to read from parameters
   jointStateTopic(DEFAULT_JOINT_STATE_TOPIC),
@@ -83,10 +73,12 @@ GazeboJointStatePublisher::GazeboJointStatePublisher():
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////
 GazeboJointStatePublisher::~GazeboJointStatePublisher()
 {
 }
 
+///////////////////////////////////////////////////////////////////////////////
 void GazeboJointStatePublisher::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 {
   // Make sure the ROS node for Gazebo has already been initalized
@@ -146,8 +138,7 @@ void GazeboJointStatePublisher::Load(physics::ModelPtr _parent, sdf::ElementPtr 
     event::Events::ConnectWorldUpdateBegin(boost::bind(&GazeboJointStatePublisher::WorldUpdate, this));
 }
 
-
-
+///////////////////////////////////////////////////////////////////////////////
 void GazeboJointStatePublisher::WorldUpdate()
 {
   sensor_msgs::JointState js;
@@ -155,7 +146,7 @@ void GazeboJointStatePublisher::WorldUpdate()
   jsPub.publish(js);
 }
 
-
+///////////////////////////////////////////////////////////////////////////////
 void GazeboJointStatePublisher::readJointStates(sensor_msgs::JointState& js)
 {
   // Add timestamp to message (so robot_state_publisher does not ignore it)
@@ -173,31 +164,28 @@ void GazeboJointStatePublisher::readJointStates(sensor_msgs::JointState& js)
     int armJointNumber = joints->armJointNumber(_jointName);
     int gripperJointNumber = joints->gripperJointNumber(_jointName);
     
-    if (joint->GetAngleCount() == 0)
+    if (GetDOF(joint) == 0)
     {
       // a 0 degree joint is a fixed joint, we will skip it.
       continue;
     }
 
-    if (joint->GetAngleCount() > 1)
+    if (GetDOF(joint) > 1)
     {
       ROS_WARN_STREAM_ONCE("GazeboJointStatePublisher: Only support 1 axis, "
-      << "got " << joint->GetAngleCount()
+      << "got " << GetDOF(joint)
       << ", will only write 1st angle for joint '" << _jointName << "'.");
     }
 
     unsigned int axis = 0;
-    double currAngle = joint->GetAngle(axis).Radian();
+    double currAngle = GetPosition(joint, axis);
     currAngle = MathFunctions::capToPI(currAngle);
 
-/*#ifdef DO_JOINT_1_2_PUBLISH_FIX
-    if ((armJointNumber == 1) || (armJointNumber == 2))*/
     if (preserveAngles.find(_jointName) != preserveAngles.end())
     {
       // simply overwrite the "capToPi" correction from above
-      currAngle = joint->GetAngle(axis).Radian();
+      currAngle = GetPosition(joint, axis);
     }
-//#endif
 
     double currEff = joint->GetForce(axis);
     double currVel = joint->GetVelocity(axis);
@@ -216,13 +204,14 @@ void GazeboJointStatePublisher::readJointStates(sensor_msgs::JointState& js)
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////
 bool GazeboJointStatePublisher::isGripper(const physics::JointPtr& joint) const
 {
   return joints->isGripper(joint->GetName()) || joints->isGripper(joint->GetScopedName());
 }
 
 
-
+///////////////////////////////////////////////////////////////////////////////
 void GazeboJointStatePublisher::UpdateChild()
 {
   ROS_INFO("UpdateChild()");

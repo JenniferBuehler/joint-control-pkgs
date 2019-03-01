@@ -19,6 +19,7 @@
 #endif
 
 #include <gazebo_joint_control/GazeboJointControl.h>
+#include <gazebo_joint_control/GazeboVersionHelpers.h>
 #include <convenience_math_functions/MathFunctions.h>
 
 #include <ros/ros.h>
@@ -188,12 +189,11 @@ void GazeboJointControl::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
             throw std::string("Joint not found");
         }
 
-        if (joint->GetAngleCount() != 1)
+        if (GetDOF(joint) != 1)
         {
             ROS_FATAL("GazeboJointControl: joints must have exactly one axis");
             throw std::string("GazeboJointControl: joints must have exactly one axis");
         }
-
 
         jointController->AddJoint(joint);
         
@@ -258,8 +258,8 @@ void GazeboJointControl::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 
         // ROS_INFO_STREAM("Setting initial position for " << joint_names[i] << ": " << initVal);
 
-        double lowLimit = joint->GetLowerLimit(0).Radian();
-        double upLimit = joint->GetUpperLimit(0).Radian();
+        double lowLimit = GetLowerLimit(joint);
+        double upLimit = GetUpperLimit(joint);
         // ROS_INFO("Joint limits: %f, %f",lowLimit,upLimit);
         if (initVal > upLimit) initVal = upLimit;
         if (initVal < lowLimit) initVal = lowLimit;
@@ -314,7 +314,7 @@ double GazeboJointControl::capTargetVel(const physics::JointPtr joint, const flo
     double distToTargetPos = 0;
     bool closeToTargetPos = false;
 
-    double currAngle = joint->GetAngle(axis).Radian();
+    double currAngle = GetPosition(joint, axis);
 
     if (useEndTargetPos)
     {
@@ -339,8 +339,8 @@ double GazeboJointControl::capTargetVel(const physics::JointPtr joint, const flo
     // Now, prevent the joints to get close to any possible limits, because
     // Gazebo then has weird issues.
 
-    double lowLimit = joint->GetLowerLimit(axis).Radian();
-    double upLimit = joint->GetUpperLimit(axis).Radian();
+    double lowLimit = GetLowerLimit(joint, axis);
+    double upLimit = GetUpperLimit(joint, axis);
     // ROS_INFO_STREAM("Low limit "<<joint->GetName()<<": "<<lowLimit<<" curr: "<<currAngle);
     // ROS_INFO_STREAM("High limit "<<joint->GetName()<<": "<<upLimit<<" curr: "<<currAngle);
     // ROS_INFO_STREAM("Current vel: "<<velocity);
@@ -388,13 +388,13 @@ double GazeboJointControl::capTargetForce(const physics::JointPtr joint, const f
     force = std::min(force, maxForce);
     force = std::max(force, -maxForce);
     
-    double currAngle = joint->GetAngle(axis).Radian();
+    double currAngle = GetPosition(joint, axis);
 
     // Now, prevent the joints to get close to any possible limits, because
     // Gazebo then has weird issues.
 
-    double lowLimit = joint->GetLowerLimit(axis).Radian();
-    double upLimit = joint->GetUpperLimit(axis).Radian();
+    double lowLimit = GetLowerLimit(joint);
+    double upLimit = GetUpperLimit(joint);
     // ROS_INFO_STREAM("Low limit "<<joint->GetName()<<": "<<lowLimit<<" curr: "<<currAngle);
     // ROS_INFO_STREAM("High limit "<<joint->GetName()<<": "<<upLimit<<" curr: "<<currAngle);
     // ROS_INFO_STREAM("Current vel: "<<force);
