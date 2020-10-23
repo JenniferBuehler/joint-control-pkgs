@@ -8,7 +8,7 @@
 <xacro:macro name="gzplugin_joint_control"
   params="robot_components_namespace
           trajectory_param_namespace
-          load_trajectory_server:=false">
+          load_trajectory_server">
   <gazebo>
     <!-- Load the joint control plugin -->
     <plugin name="gzplugin_joint_control" filename="libgazebo_joint_control.so">
