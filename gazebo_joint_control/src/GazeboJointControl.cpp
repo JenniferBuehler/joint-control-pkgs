@@ -218,11 +218,10 @@ void GazeboJointControl::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
         // going to be called.
         // XXX TODO investigate: This was deprecated in ODE gazebo 5? Also works without it..
         if (!UseForce()) {
-            ROS_INFO("Setting fmax prints a warning/error but it somehow still is required...");
-            joint->SetParam("fmax", 0, max_force);
+            joint->SetParam("fmax", 0, static_cast<double>(max_force));
         }
 #else
-        joint->SetMaxForce(0,max_force);
+        joint->SetMaxForce(0, max_force);
 #endif
         
         if (DisableGravity())
